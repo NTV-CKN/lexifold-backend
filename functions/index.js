@@ -1,21 +1,20 @@
-/**
- * Local network access setup:
- * firebase emulators:start --only functions --host 0.0.0.0
- * then open http://<your-lan-ip>:5001/lexifold-d8b1c/us-central1/helloWorld
- */
-
 const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 
-exports.helloWorld = functions.https.onRequest((req, res) => {
-  const clientIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+//middleware
+const authMiddleware = require("./middleware/auth.middleware");
+const adminMiddleware = require("./middleware/admin.middleware");
 
-  functions.logger.info("helloWorld called", { clientIp });
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
-  res.status(200).json({
-    ok: true,
-    message: "Hello from Firebase Functions on LAN",
-    clientIp,
-    timestamp: new Date().toISOString(),
-    path: req.path,
-  });
-});
+const express = require("express");
+const cors = require("cors");
+
+//App route
+const app = express();
+app.use(cors({origin: true}));
+app.use(express.json());
+
+exports.api = functions.https.onRequest(app);
