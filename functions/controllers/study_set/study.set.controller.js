@@ -1,6 +1,12 @@
 const { strIso8601ToTimestamp } = require("../../utils/convert.utils");
+const BaseController = require("../../controllers/base/base.controller");
+const studySetService = require("../../services/study_set/study.set.service");
 
-class StudySetController {
+class StudySetController extends BaseController {
+    constructor() {
+        super(studySetService);
+    }
+
     /**
      * @typedef {Object} VocabularyPayload
      * @property {string} id - ID của từ vựng (UUID)
