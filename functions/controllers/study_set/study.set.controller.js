@@ -32,39 +32,28 @@ class StudySetController extends BaseController {
      * @property {string} updatedAt - Thời gian cập nhật cuối (Chuỗi ISO 8601)
      * @property {VocabularyPayload[]} vocabularies - Danh sách các từ vựng đi kèm
      */
-    async addStudySet(req, res) {
+    async createStudySetWithVocabs(req, res) {
         try {
-            
+            const uid = req.user.uid;
+            const payload = req.body;
+
+            const result = await this.service.createStudySetWithVocabs({
+                ...payload,
+                uid: uid
+            })
+
+            if (result.success) {
+                return res.status(201).json(result);
+            }
+
+            throw new Error(result.message);
         } catch (error) {
-
+            return res.status(500).json({
+                success: false,
+                message: `Lỗi: ${error.message}`
+            });
         }
-    }
-
-    _mapStudySetToObject(payload) {
-        const { updatedAt, createdAt, vocabularies, ...restPayload } = payload;
-
-        return {
-            updatedAt: strIso8601ToTimestamp(updatedAt),
-            createdAt: strIso8601ToTimestamp(createdAt),
-            ...restPayload
-        };
-    }
-
-    _mapVocabulariesToObject(payload) {
-        const { vocabularies } = payload;
-        if (!vocabularies || !Array.isArray(vocabularies) || vocabularies.length === 0) {
-            return [];
-        }
-
-        return vocabularies.map((vocab) => {
-            const { example, imageUrl, updatedAt, ...restVocab } = vocab;
-
-            return {
-                example: example || null,
-                imageUrl: imageUrl || null,
-                updatedAt: strIso8601ToTimestamp(updatedAt),
-                ...restVocab
-            };
-        });
     }
 }
+
+module.exports = new StudySetController();
