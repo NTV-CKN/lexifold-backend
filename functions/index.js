@@ -7,6 +7,8 @@ const adminMiddleware = require("./middleware/admin.middleware");
 
 //Auth route
 const authRoute = require("./routes/auth/auth.route");
+//Study set route
+const studySetRoute = require("./routes/study_set/study.set.route");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -22,5 +24,8 @@ app.use(express.json());
 
 //Auth route
 app.use("/v1", authRoute);
+
+//Study set route
+app.use("/v1", studySetRoute);
 
 exports.api = functions.https.onRequest(app);
