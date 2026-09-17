@@ -5,6 +5,13 @@ const studySetController = require("../../controllers/study_set/study.set.contro
 //auth middleware
 const { authenticateToken } = require("../../middleware/auth.middleware");
 
+//Base CRUD
+router.post(
+    "/study-set/create",
+    authenticateToken,
+    (req, res) => studySetController.create(req, res)
+);
+
 router.post(
     "/study-set/create-with-vocabs",
     authenticateToken,

@@ -1,5 +1,3 @@
-const { Timestamp } = require("firebase-admin/firestore");
-
 class BaseController {
     constructor(service) {
         if (!service) {
@@ -26,11 +24,11 @@ class BaseController {
                 return res.status(201).json(result);
             }
 
-            return res.status(4).json(result);
+            return res.status(400).json(result);
         } catch (error) {
             return res.status(500).json({
                 success: false,
-                messsage: `Lỗi: ${error.message}`
+                message: `Lỗi: ${error.message}`
             });
         }
     }
