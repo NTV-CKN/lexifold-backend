@@ -1,6 +1,7 @@
 const admin = require("firebase-admin");
 const { Timestamp, Transaction } = require("firebase-admin/firestore");
 const { ensureTimestamp } = require("../../utils/convert.utils");
+const { FieldPath } = require("firebase-admin/firestore");
 
 /**
  * Lớp BaseService sẽ làm việc với 3 dữ liệu chính:
@@ -16,6 +17,79 @@ const { ensureTimestamp } = require("../../utils/convert.utils");
 class BaseService {
     constructor(nameCollect) {
         this.nameCollect = nameCollect;
+    }
+
+    /**
+     * 
+     * @param {Object} filters 
+     * 
+     * Hàm này tiến hành trả về kết quả phân trang theo
+     * hướng Cursor. 
+     * 
+     * Các dữ liệu cần phải có trong đối tượng 'filters':
+     *  + limit: Giới hạn các phần tử được trả về.
+     *  + lastId: Dùng để lấy tiếp các item phía sau id này.
+     *  + filters: Chứa các key - value dùng để lọc ra các document cho phù hợp.
+     *  + sortBy: Dùng để sắp xếp các dữ liệu trước khi lấy ra.
+     */
+    async getItemsCursor({
+        limit = 20, lastId = null, filters = {}, sortBy = "createdAt"
+    } = {}) {
+        try {
+            let query = admin.firestore().collection(this.nameCollect);
+
+            //Lọc các document có field phù hợp
+            Object.keys(filters).forEach(key => {
+                if (filters[key] !== undefined && filters[key] !== null) {
+                    query = query.where(key, "==", filters[key]);
+                }
+            });
+
+            //Sắp xếp các document theo field chỉ định 
+            query = query
+                .orderBy(sortBy, 'desc')
+                    .orderBy(FieldPath.documentId(), 'desc');
+
+            //Nếu có lastId thì bắt đầu lấy dữ liệu sau document đó
+            if (lastId) {
+                const lastDoc = await admin.firestore().collection(this.nameCollect).doc(lastId).get();
+                if (lastDoc.exists)
+                    query = query.startAfter(lastDoc);
+                else
+                    throw new Error("Không tìm thấy lastId tương ứng");
+            }
+
+            const snapshots = (await query.limit(limit + 1).get());
+            if (!snapshots.empty) {
+                const docSnapshots = snapshots.docs;
+                const hasNextPage = docSnapshots.length > limit;
+                //Nếu lấy dư 1 phần tử và > limit thì bỏ phần tử thừa đó khỏi kết quả trả về
+                if (hasNextPage) {
+                    docSnapshots.pop();
+                }
+
+                const items = docSnapshots.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                const nextCursorId = items.length > 0 ? items[items.length - 1].id : null;
+
+                return {
+                    items: items,
+                    nextCursorId: nextCursorId,
+                    hasNextPage: hasNextPage
+                };
+            } else {
+                return {
+                    items: [],
+                    nextCursorId: null,
+                    hasNextPage: false
+                };
+            }
+        } catch (error) {
+            throw new Error(error.message || error);
+        }
     }
 
     /**

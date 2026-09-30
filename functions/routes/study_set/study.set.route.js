@@ -13,6 +13,12 @@ router.post(
 );
 
 router.post(
+    "/study-set/get-items-cursor",
+    authenticateToken,
+    (req, res) => studySetController.getItemsCursor(req, res)
+);
+
+router.post(
     "/study-set/create-with-vocabs",
     authenticateToken,
     (req, res) => studySetController.createStudySetWithVocabs(req, res)
