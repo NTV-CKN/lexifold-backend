@@ -1,6 +1,6 @@
 const admin = require("firebase-admin");
 const { Timestamp, Transaction } = require("firebase-admin/firestore");
-const { ensureTimestamp } = require("../../utils/convert.utils");
+const { ensureTimestamp, timestampToStrIso } = require("../../utils/convert.utils");
 const { FieldPath } = require("firebase-admin/firestore");
 
 /**
@@ -48,7 +48,7 @@ class BaseService {
             //Sắp xếp các document theo field chỉ định 
             query = query
                 .orderBy(sortBy, 'desc')
-                    .orderBy(FieldPath.documentId(), 'desc');
+                .orderBy(FieldPath.documentId(), 'desc');
 
             //Nếu có lastId thì bắt đầu lấy dữ liệu sau document đó
             if (lastId) {
@@ -68,10 +68,16 @@ class BaseService {
                     docSnapshots.pop();
                 }
 
-                const items = docSnapshots.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                const items = docSnapshots.map(doc => {
+                    const {createdAt, updatedAt, ...rest} = doc.data();
+
+                    return {
+                        id: doc.id,
+                        createdAt: timestampToStrIso(createdAt),
+                        updatedAt: timestampToStrIso(updatedAt), 
+                        ...rest
+                    };
+                });
 
                 const nextCursorId = items.length > 0 ? items[items.length - 1].id : null;
 
